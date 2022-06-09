@@ -23,7 +23,8 @@ torch.backends.cudnn.benchmark = True
 
 class GeneratorModule(pl.LightningModule):
 
-    def __init__(self, config: Dict, use_fp16: bool = False):
+    def __init__(self, config: Dict, use_fp16: bool = False,
+                 timestep_respacing=None):
         super().__init__()
         self.config = config
 
@@ -46,6 +47,7 @@ class GeneratorModule(pl.LightningModule):
         params['image_size'] = self.size_image
         params['n_classes'] = config['dataset']['n_classes']
         params['use_fp16'] = use_fp16
+        params['timestep_respacing'] = timestep_respacing
         self.model, self.diffusion = create_model_and_diffusion(**params)
 
         self.ema_rate = config['ema_rate']

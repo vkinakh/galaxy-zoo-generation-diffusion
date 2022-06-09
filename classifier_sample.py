@@ -32,7 +32,8 @@ def main(args):
     output_path.mkdir(exist_ok=True, parents=True)
 
     module_gen = GeneratorModule.load_from_checkpoint(checkpoint_path=path_ckpt_gen,
-                                                      config=config_gen, use_fp16=config_gen['fp16'])
+                                                      config=config_gen, use_fp16=config_gen['fp16'],
+                                                      timestep_respacing='100')
     module_gen.eval()
     module_clas = ClassifierModule.load_from_checkpoint(checkpoint_path=path_ckpt_clas,
                                                         config=config_clas, use_fp16=config_clas['fp16'])

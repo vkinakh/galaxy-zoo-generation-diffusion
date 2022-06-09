@@ -28,7 +28,8 @@ def main(args) -> None:
     output_path.mkdir(exist_ok=True, parents=True)
 
     module = GeneratorModule.load_from_checkpoint(checkpoint_path=path_checkpoint,
-                                                  config=config, use_fp16=config['fp16'])
+                                                  config=config, use_fp16=config['fp16'],
+                                                  timestep_respacing='100')
     module.eval()
 
     images = []
