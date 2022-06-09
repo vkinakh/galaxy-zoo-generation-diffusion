@@ -28,7 +28,7 @@ def main(args) -> None:
 
     module = GeneratorModule.load_from_checkpoint(checkpoint_path=path_checkpoint,
                                                   config=config, use_fp16=config['fp16'],
-                                                  timestep_respacing='100')
+                                                  timestep_respacing=str(args.timestep_respacing))
     module.eval()
 
     diffusion = module.diffusion
@@ -67,6 +67,16 @@ def main(args) -> None:
         im_in_np = torch_to_image_numpy(im_in)
         im_out_np = torch_to_image_numpy(im_out)
 
+        plt.figure()
+        plt.title('Input')
+        plt.imshow(im_in_np[0])
+        plt.show()
+
+        plt.figure()
+        plt.title('Output')
+        plt.imshow(im_out_np[0])
+        plt.show()
+
         images.extend(im_in_np)
         generated_images.extend(im_out_np)
         labels.extend(lbl.cpu().numpy())
@@ -99,5 +109,7 @@ if __name__ == '__main__':
                         help='Batch size to use when generating samples')
     parser.add_argument('--guidance_scale', '-s', type=float,
                         default=3.)
+    parser.add_argument('--timestep_respacing', '-t',
+                        type=int, default=250)
     args = parser.parse_args()
     main(args)

@@ -33,7 +33,7 @@ def main(args):
 
     module_gen = GeneratorModule.load_from_checkpoint(checkpoint_path=path_ckpt_gen,
                                                       config=config_gen, use_fp16=config_gen['fp16'],
-                                                      timestep_respacing='100')
+                                                      timestep_respacing=str(args.timestep_respacing))
     module_gen.eval()
     module_clas = ClassifierModule.load_from_checkpoint(checkpoint_path=path_ckpt_clas,
                                                         config=config_clas, use_fp16=config_clas['fp16'])
@@ -97,5 +97,7 @@ if __name__ == '__main__':
                         help='Batch size to use when generating samples')
     parser.add_argument('--output', '-o', type=str, required=True,
                         help='Output folder')
+    parser.add_argument('--timestep_respacing', '-t',
+                        type=int, default=250)
     args = parser.parse_args()
     main(args)

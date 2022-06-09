@@ -29,7 +29,7 @@ def main(args) -> None:
 
     module = GeneratorModule.load_from_checkpoint(checkpoint_path=path_checkpoint,
                                                   config=config, use_fp16=config['fp16'],
-                                                  timestep_respacing='100')
+                                                  timestep_respacing=str(args.timestep_respacing))
     module.eval()
 
     images = []
@@ -73,5 +73,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', '--bs', '-b', type=int,
                         default=2,
                         help='Batch size to use when generating samples')
+    parser.add_argument('--timestep_respacing', '-t',
+                        type=int, default=250)
     args = parser.parse_args()
     main(args)
