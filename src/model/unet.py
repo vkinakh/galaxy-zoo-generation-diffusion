@@ -11,6 +11,7 @@ import torch.nn.functional as F
 from .nn import conv_nd, linear, avg_pool_nd, normalization, zero_module, checkpoint, timestep_embedding
 from src.utils import convert_module_to_f16, convert_module_to_f32
 
+
 def count_flops_attn(model, _x, y):
     """
     A counter for the `thop` package to count the operations in an
@@ -673,7 +674,6 @@ class UNetModel(nn.Module):
 
         if self.num_classes is not None:
             self.label_emb = nn.Linear(num_classes, time_embed_dim)
-            # self.label_emb = nn.Embedding(num_classes, time_embed_dim)
 
         ch = input_ch = int(channel_mult[0] * model_channels)
         self.input_blocks = nn.ModuleList(
