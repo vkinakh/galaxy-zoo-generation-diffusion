@@ -3,7 +3,6 @@ from pathlib import Path
 
 import numpy as np
 from tqdm import tqdm
-import matplotlib.pyplot as plt
 
 import torch
 
@@ -18,6 +17,7 @@ def torch_to_image_numpy(tensor: torch.Tensor):
 
 
 def main(args) -> None:
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
     config_path = args.config
     config = get_config(config_path)
     config['batch_size'] = args.batch_size
@@ -33,6 +33,7 @@ def main(args) -> None:
 
     diffusion = module.diffusion
     model = module.model
+    model = model.to(device)
 
     def model_fn(x_t, ts, **kwargs):
         half = x_t[: len(x_t) // 2]
@@ -50,32 +51,25 @@ def main(args) -> None:
 
     shape = (args.batch_size * 2, module.n_channels, module.size_image, module.size_image)
     for im_in, lbl in tqdm(module.test_dataloader()):
+        im_in = im_in.to(device)
+        lbl = lbl.to(device)
+
         with torch.no_grad():
 
-            zero_label = torch.zeros_like(lbl, device=module.device)
+            zero_label = torch.zeros_like(lbl, device=device)
             lbl = torch.cat([lbl, zero_label], dim=0)
             im_out = diffusion.p_sample_loop(
                 model_fn,
                 shape=shape,
-                device=module.device,
+                device=device,
                 clip_denoised=True,
-                progress=True,
+                progress=False,
                 model_kwargs={'y': lbl},
                 cond_fn=None,
             )[:args.batch_size]
 
         im_in_np = torch_to_image_numpy(im_in)
         im_out_np = torch_to_image_numpy(im_out)
-
-        plt.figure()
-        plt.title('Input')
-        plt.imshow(im_in_np[0])
-        plt.show()
-
-        plt.figure()
-        plt.title('Output')
-        plt.imshow(im_out_np[0])
-        plt.show()
 
         images.extend(im_in_np)
         generated_images.extend(im_out_np)
@@ -105,7 +99,7 @@ if __name__ == '__main__':
     parser.add_argument('--output', '-o', type=str, required=True,
                         help='Output folder')
     parser.add_argument('--batch_size', '--bs', '-b', type=int,
-                        default=1,
+                        default=50,
                         help='Batch size to use when generating samples')
     parser.add_argument('--guidance_scale', '-s', type=float,
                         default=3.)

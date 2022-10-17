@@ -44,9 +44,7 @@ def main(args):
                 y: torch.Tensor) -> torch.Tensor:
         with torch.enable_grad():
             x_in = x.detach().requires_grad_(True)
-
-            with torch.no_grad():
-                logits = module_clas(x_in, t)
+            logits = module_clas(x_in, t)
             loss = F.mse_loss(logits, y)
             return torch.autograd.grad(loss, x_in)[0] * args.classifier_scale
 
