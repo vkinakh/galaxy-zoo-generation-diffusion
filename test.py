@@ -10,6 +10,7 @@ from chamferdist import ChamferDistance
 from src.model import ResNetSimCLR
 from src.data import MakeDataLoader
 from src.metrics import get_fid_between_datasets, inception_score
+from src.utils import calculate_frechet_distance
 
 
 # encoder parameters
@@ -72,8 +73,11 @@ class Evaluator:
         # is_mean, is_std = self._compute_inception_score()
         # print(f'Inception score for original images: {is_mean} +- {is_std}')
 
-        chamfer_dist = self._compute_chamfer_distance()
-        print(f'Chamfer distance for generated images: {chamfer_dist}')
+        # chamfer_dist = self._compute_chamfer_distance()
+        # print(f'Chamfer distance for generated images: {chamfer_dist}')
+
+        fid_ssl = self._compute_ssl_fid()
+        print(f'FID score with SSL encoder: {fid_ssl}')
 
     @torch.no_grad()
     def _compute_fid_score(self) -> float:
@@ -141,6 +145,42 @@ class Evaluator:
 
         chamfer_dist = ChamferDistance()
         return chamfer_dist(tsne_real, tsne_fake).detach().item()
+
+    @torch.no_grad()
+    def _compute_ssl_fid(self) -> float:
+        """Computes FID score with the SimCLR encoder
+
+        Returns:
+            float: FID score
+        """
+
+        dl_real = self.make_dl.get_data_loader_test(self.batch_size, shuffle=False)
+        dl_gen = DataLoader(DatasetFromNumpy(self.imgs_gen, self.labels_gen, return_labels=False),
+                            batch_size=self.batch_size, shuffle=False, num_workers=4, drop_last=True)
+
+        features_real = []
+        features_gen = []
+
+        for img, _ in dl_real:
+            img = img.to(self.device)
+            with torch.no_grad():
+                h, _ = self.encoder(img)
+            features_real.append(h.cpu().numpy())
+
+        for img in dl_gen:
+            img = img.to(self.device)
+            with torch.no_grad():
+                h, _ = self.encoder(img)
+            features_gen.append(h.cpu().numpy())
+
+        features_real = np.concatenate(features_real, axis=0)
+        features_gen = np.concatenate(features_gen, axis=0)
+
+        mu_real, sigma_real = np.mean(features_real, axis=0), np.cov(features_real, rowvar=False)
+        mu_gen, sigma_gen = np.mean(features_gen, axis=0), np.cov(features_gen, rowvar=False)
+
+        fid = calculate_frechet_distance(mu_real, sigma_real, mu_gen, sigma_gen)
+        return fid
 
 
 if __name__ == '__main__':
