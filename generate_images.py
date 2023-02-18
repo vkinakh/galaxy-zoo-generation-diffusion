@@ -47,16 +47,16 @@ def main(args) -> None:
 
     shape = (args.batch_size * 2, module.n_channels, module.size_image, module.size_image)
 
-    # generate training images
-    dls = [module.train_dataloader(), module.val_dataloader(), module.test_dataloader()]
-    names = ['train', 'val', 'test']
+    # generate images
+    dls = [module.val_dataloader(), module.test_dataloader()]
+    names = ['val', 'test']
 
     for i, dl in enumerate(dls):
         images = []
         generated_images = []
         labels = []
 
-        for im_in, lbl in tqdm(module.train_dataloader()):
+        for im_in, lbl in tqdm(dl):
             im_in = im_in.to(device)
             lbl = lbl.to(device)
 

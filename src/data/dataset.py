@@ -106,3 +106,19 @@ class MakeDataLoader:
                               **kwargs) -> DataLoader:
         return DataLoader(self.dataset_valid, batch_size=batch_size, shuffle=shuffle, drop_last=True,
                           pin_memory=False, **kwargs)
+
+
+def infinite_loader(data_loader: DataLoader):
+    """Infinitely returns batches from the data loader.
+    Useful for training GANs
+
+    Args:
+        data_loader: data loader to load from
+
+    Yields:
+        batch
+    """
+
+    while True:
+        for batch in data_loader:
+            yield batch

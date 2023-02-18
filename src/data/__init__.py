@@ -1,1 +1,1 @@
-from .dataset import MakeDataLoader
+from .dataset import MakeDataLoader, infinite_loader
