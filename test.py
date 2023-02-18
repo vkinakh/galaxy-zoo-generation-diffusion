@@ -1,11 +1,21 @@
 import numpy as np
 
-import torch
-from torch.utils.data import DataLoader, Dataset
-from torchvision import transforms
+from sklearn.manifold import TSNE
 
+import torch
+from torch.utils.data import Dataset, DataLoader
+from torchvision import transforms
+from chamferdist import ChamferDistance
+
+from src.model import ResNetSimCLR
 from src.data import MakeDataLoader
 from src.metrics import get_fid_between_datasets, inception_score
+
+
+# encoder parameters
+SIMCLR_PATH = './models/galaxy_zoo_simclr.pth'
+ENCODER_DIM = 128
+BASE_MODEL = 'resnet50'
 
 
 class DatasetFromNumpy(Dataset):
@@ -41,18 +51,29 @@ class Evaluator:
         self.imgs_gen = imgs_gen
         self.labels_gen = labels_gen
 
+        n_channels = imgs_gen.shape[-1]
+        img_size = imgs_gen.shape[1]
+
         self.device = device
         self.batch_size = batch_size
 
-        self.ds_gen = DatasetFromNumpy(imgs_gen, labels_gen)
-        self.make_dl = MakeDataLoader(path_original_images, path_original_labels, 64)
+        self.make_dl = MakeDataLoader(path_original_images, path_original_labels, img_size)
+
+        # load SimCLR encoder
+        self.encoder = ResNetSimCLR(BASE_MODEL, n_channels, ENCODER_DIM).to(self.device)
+        self.encoder.load_state_dict(torch.load(SIMCLR_PATH, map_location=self.device))
+        self.encoder.eval()
 
     @torch.no_grad()
     def evaluate(self):
         # fid_orig = self._compute_fid_score()
         # print(f'FID score for original images: {fid_orig}')
-        is_mean, is_std = self._compute_inception_score()
-        print(f'Inception score for original images: {is_mean} +- {is_std}')
+
+        # is_mean, is_std = self._compute_inception_score()
+        # print(f'Inception score for original images: {is_mean} +- {is_std}')
+
+        chamfer_dist = self._compute_chamfer_distance()
+        print(f'Chamfer distance for generated images: {chamfer_dist}')
 
     @torch.no_grad()
     def _compute_fid_score(self) -> float:
@@ -62,8 +83,8 @@ class Evaluator:
             float: FID score
         """
 
-        fid = get_fid_between_datasets(self.ds_gen, self.make_dl.dataset_test, self.device, self.batch_size,
-                                       len(self.ds_gen))
+        ds_gen = DatasetFromNumpy(self.imgs_gen, self.labels_gen, return_labels=False)
+        fid = get_fid_between_datasets(ds_gen, self.make_dl.dataset_test, self.device, self.batch_size, len(ds_gen))
         return fid
 
     @torch.no_grad()
@@ -77,6 +98,49 @@ class Evaluator:
         ds = DatasetFromNumpy(self.imgs_gen, self.labels_gen, return_labels=False)
         score_mean, score_std = inception_score(ds, True, self.batch_size, True, 3)
         return score_mean, score_std
+
+    @torch.no_grad()
+    def _compute_chamfer_distance(self):
+        """Computes chamfer distance
+
+        Returns:
+            float: chamfer distance
+        """
+
+        ds_gen = DatasetFromNumpy(self.imgs_gen, self.labels_gen, return_labels=False)
+        dl_gen = DataLoader(ds_gen, batch_size=self.batch_size, shuffle=False, num_workers=4, drop_last=True)
+        dl_real = self.make_dl.get_data_loader_test(self.batch_size, shuffle=False)
+        n_batches = len(dl_gen)
+
+        embeddings = []
+        i = 0
+        for (img, _) in dl_real:
+            img = img.to(self.device)
+            with torch.no_grad():
+                h, _ = self.encoder(img)
+            embeddings.append(h.cpu().numpy())
+
+            i += 1
+            if i == n_batches:
+                break
+
+        for img in dl_gen:
+            img = img.to(self.device)
+            with torch.no_grad():
+                h, _ = self.encoder(img)
+            embeddings.append(h.cpu().numpy())
+
+        embeddings = np.concatenate(embeddings, axis=0)
+        tsne_emb = TSNE(n_components=3).fit_transform(embeddings)
+        n = len(tsne_emb)
+        tsne_real = tsne_emb[:n // 2]
+        tsne_gen = tsne_emb[n // 2:]
+
+        tsne_real = torch.from_numpy(tsne_real).unsqueeze(0)
+        tsne_fake = torch.from_numpy(tsne_gen).unsqueeze(0)
+
+        chamfer_dist = ChamferDistance()
+        return chamfer_dist(tsne_real, tsne_fake).detach().item()
 
 
 if __name__ == '__main__':

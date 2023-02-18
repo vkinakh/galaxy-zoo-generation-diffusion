@@ -8,6 +8,13 @@
 ### Checkpoints ###
 lightning_logs/
 results/
+models/
+
+### checkpoints ###
+*.pth
+*.ckpt
+*.pkl
+*.pt
 
 ### Images ###
 # JPEG
