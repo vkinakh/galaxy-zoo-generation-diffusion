@@ -5,13 +5,14 @@ from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
 
 from src.data import MakeDataLoader
-from src.metrics.fid import get_fid_between_datasets
+from src.metrics import get_fid_between_datasets, inception_score
 
 
 class DatasetFromNumpy(Dataset):
-    def __init__(self, data: np.ndarray, labels: np.ndarray):
+    def __init__(self, data: np.ndarray, labels: np.ndarray, return_labels: bool = True):
         self.data = data
         self.labels = labels
+        self.return_labels = return_labels
 
         self.transform = transforms.Compose([
             transforms.ToTensor(),
@@ -22,7 +23,11 @@ class DatasetFromNumpy(Dataset):
         lbl = self.labels[index]
         img = self.data[index]
         img = self.transform(img)
-        return img, lbl
+
+        if self.return_labels:
+            return img, lbl
+
+        return img
 
     def __len__(self):
         return len(self.data)
@@ -44,8 +49,10 @@ class Evaluator:
 
     @torch.no_grad()
     def evaluate(self):
-        fid_orig = self._compute_fid_score()
-        print(f'FID score for original images: {fid_orig}')
+        # fid_orig = self._compute_fid_score()
+        # print(f'FID score for original images: {fid_orig}')
+        is_mean, is_std = self._compute_inception_score()
+        print(f'Inception score for original images: {is_mean} +- {is_std}')
 
     @torch.no_grad()
     def _compute_fid_score(self) -> float:
@@ -58,6 +65,18 @@ class Evaluator:
         fid = get_fid_between_datasets(self.ds_gen, self.make_dl.dataset_test, self.device, self.batch_size,
                                        len(self.ds_gen))
         return fid
+
+    @torch.no_grad()
+    def _compute_inception_score(self):
+        """Computes inception score
+
+        Returns:
+            float: inception score
+        """
+
+        ds = DatasetFromNumpy(self.imgs_gen, self.labels_gen, return_labels=False)
+        score_mean, score_std = inception_score(ds, True, self.batch_size, True, 3)
+        return score_mean, score_std
 
 
 if __name__ == '__main__':
