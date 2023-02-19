@@ -328,7 +328,7 @@ if __name__ == '__main__':
     parser.add_argument('--path_gen_labels', type=str, required=True)
 
     args = parser.parse_args()
-    gen_images = np.load(args.path_gen_image)
+    gen_images = np.load(args.path_gen_images)
     labels = np.load(args.path_gen_labels)
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
