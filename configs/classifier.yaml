@@ -1,23 +1,24 @@
-batch_size: 32
-n_workers: 16
-iterations: 200000
-eval_every: 1
-accumulate_grad_batches: 1
-fp16: False
+batch_size: 32                # batch size for training
+n_workers: 16                 # number of workers for data loading
+iterations: 200000            # number of training iterations
+eval_every: 1                 # evaluate every eval_every epochs
+accumulate_grad_batches: 1    # accumulate gradients for this number of batches
+fp16: False                   # use half precision
 
-lr: 3e-4
-wd: "0"
+lr: 3e-4                      # learning rate
+wd: "0"                       # weight decay
 
-fine_tune_from:
+fine_tune_from:               # path to the model to fine-tune from
 
-schedule_sampler: uniform
+schedule_sampler: uniform     # sampler for the schedule
 
-dataset:
-  image_path: /home/kinakh/Datasets/galaxy-zoo/images_training_rev1/
-  label_path: /home/kinakh/Datasets/galaxy-zoo/training_solutions_rev1.csv
-  size: 64
-  n_classes: 37
+dataset:                                      # dataset parameters
+  image_path: <path to folder with images>    # path to folder with images
+  label_path: <path to csv with labels>       # path to csv with labels
+  size: 64                                    # size of the image
+  n_classes: 37                               # number of classes
 
-comment: galaxy_zoo_diffusion_classifier
+comment: galaxy_zoo_diffusion_classifier      # comment for the experiment
+
 
 
