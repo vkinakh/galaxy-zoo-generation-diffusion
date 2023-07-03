@@ -1,0 +1,34 @@
+name: galaxy_zoo_diffusion
+channels:
+  - pytorch
+  - defaults
+  - conda-forge
+dependencies:
+  - astropy=5.0=py38h6c62de6_0
+  - cudatoolkit=10.2.89=hfd86e86_1
+  - imageio=2.13.5=pyh239f2a4_0
+  - numpy=1.20.3=py38hf144106_0
+  - pillow=8.4.0=py38h5aabda8_0
+  - pip=21.2.2=py38h06a4308_0
+  - python=3.8.11=h12debd9_0_cpython
+  - pytorch=1.9.0=py3.8_cuda10.2_cudnn7.6.5_0
+  - scikit-image=0.17.2=py38h51da96c_4
+  - scipy=1.7.1=py38h292c36d_2
+  - torchvision=0.10.0=py38_cu102
+  - wheel=0.37.0=pyhd3eb1b0_1
+  - pip:
+    - chamferdist==1.0.0
+    - corner==2.2.1
+    - geomloss==0.2.4
+    - matplotlib==3.4.3
+    - opencv-python==4.5.3.56
+    - pandas==1.3.2
+    - photutils==1.3.0
+    - pytorch-lightning==1.5.10
+    - pyyaml==5.4.1
+    - scikit-learn==0.24.2
+    - smmap==5.0.0
+    - statmorph==0.4.0
+    - streamlit==0.88.0
+    - tensorboard==2.6.0
+    - tqdm==4.62.2
